@@ -1,0 +1,31 @@
+name: temoin-homelab
+# 02/10/2026 : temoin EXTERNE du homelab. Le homelab publie "vivant" toutes
+# les 5 min sur ntfy.sh (topic secret). Ce workflow (tourne sur les runners
+# GitHub, donc vivant meme si le homelab gèle) verifie toutes les 10 min que
+# le dernier "vivant" a moins de 25 min ; sinon il alerte le telephone.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  temoin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verifier le battement
+        env:
+          VIVANT: ${{ secrets.VIVANT_TOPIC }}
+          ALERTES: ${{ secrets.ALERT_TOPIC }}
+        run: |
+          DERNIER=$(curl -fsS -m 20 "https://ntfy.sh/$VIVANT/json?poll=1&since=25m" | grep -c '"event":"message"' || true)
+          echo "messages vivant en 25 min: $DERNIER"
+          if [ "$DERNIER" -eq 0 ]; then
+            curl -fsS -m 20 \
+              -H "Title: HOMELAB GELE OU INJOIGNABLE" \
+              -H "Priority: high" \
+              -H "Tags: rotating_light" \
+              -d "Aucun battement depuis plus de 25 minutes. Le watchdog a peut-etre deja rebooté la machine (retour attendu en 2 min), ou elle est vraiment morte." \
+              "https://ntfy.sh/$ALERTES"
+            echo "ALERTE ENVOYEE au telephone"
+          else
+            echo "homelab vivant, rien a faire"
+          fi
