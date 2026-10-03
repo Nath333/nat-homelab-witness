@@ -1,11 +1,16 @@
 name: temoin-homelab
 # 02/10/2026 : temoin EXTERNE du homelab. Le homelab publie "vivant" toutes
 # les 5 min sur ntfy.sh (topic secret). Ce workflow (tourne sur les runners
-# GitHub, donc vivant meme si le homelab gèle) verifie toutes les 10 min que
-# le dernier "vivant" a moins de 25 min ; sinon il alerte le telephone.
+# GitHub, donc vivant meme si le homelab gèle) verifie que le dernier "vivant"
+# a moins de 25 min ; sinon il alerte le telephone.
+# 03/10/2026 : 8 crons DECALEES (jamais sur l'heure pleine, 2 familles
+# d'offsets) — GitHub a droppé les tours d'un */10 sur l'heure ronde pendant
+# 6 h le 02/10 ; les offsets + la densité réduisent le risque, et keepalive.yml
+# empêche la désactivation auto après 60 j d'inactivité du dépôt.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "4,19,34,49 * * * *"
+    - cron: "11,26,41,56 * * * *"
   workflow_dispatch:
 jobs:
   temoin:
